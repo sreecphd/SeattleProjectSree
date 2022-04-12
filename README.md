@@ -191,4 +191,4 @@ IdlingRegistry.getInstance().register(RegisterIdlingResource(activity))
 to my @Before function. With this in place Espresso becomes smarter and waits for asynchronous activities to complete before continuing the test steps.
 
 Base version
-Added second line
+Added second changed line
