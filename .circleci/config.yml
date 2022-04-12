@@ -1,0 +1,69 @@
+version: 2
+
+references:
+
+# Google Services
+
+  export_gservices_json: &export_gservices_json
+    run:
+      name: Export Google Services JSON environment variable
+      command: echo 'export GOOGLE_SERVICES="$GOOGLE_SERVICES"' >> $BASH_ENV
+  decode_gservices_json: &decode_gservices_json
+    run:
+      name: Decode Google Services JSON
+      command: echo $GOOGLE_SERVICES | base64 -di > app/google-services.json
+
+  export_key_props: &export_key_props
+    run:
+      name: Export keystore.properties environment variable
+      command: echo 'export KEYSTORE_PROPERTIES="$KEYSTORE_PROPERTIES"' >> $BASH_ENV
+  decode_key_props: &decode_key_props
+    run:
+      name: Decode keystore.properties
+      command: echo $KEYSTORE_PROPERTIES | base64 -di > keystore.properties
+
+  export_debug_keystore: &export_debug_keystore
+    run:
+      name: Export debug.keystore environment variable
+      command: echo 'export DEBUG_KEYSTORE="$DEBUG_KEYSTORE"' >> $BASH_ENV
+  decode_debug_keystore: &decode_debug_keystore
+    run:
+      name: Decode debug.keystore
+      command: echo $DEBUG_KEYSTORE | base64 -di > debug.keystore
+
+jobs:
+  build:
+    working_directory: ~/code
+    docker:
+      - image: circleci/android:api-27-alpha
+    environment:
+      JVM_OPTS: -Xmx2056m
+    steps:
+      - checkout
+      - restore_cache:
+          key: jars-{{ checksum "build.gradle" }}-{{ checksum  "app/build.gradle" }}
+      - run:
+         name: Chmod permissions #if permission for Gradlew Dependencies fail, use this.
+         command: sudo chmod +x ./gradlew
+      - run:
+          name: Download Dependencies
+          command: ./gradlew androidDependencies
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: jars-{{ checksum "build.gradle" }}-{{ checksum  "app/build.gradle" }}
+      - *export_gservices_json
+      - *decode_gservices_json
+      - *export_key_props
+      - *decode_key_props
+      - *export_debug_keystore
+      - *decode_debug_keystore
+      - run:
+          name: Run Tests
+          command: ./gradlew lint test
+      - store_artifacts:
+          path: app/build/reports
+          destination: reports
+      - store_test_results:
+          path: app/build/test-results
+      # See https://circleci.com/docs/2.0/deployment-integrations/ for deploy examples
