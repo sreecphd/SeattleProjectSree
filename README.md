@@ -192,3 +192,4 @@ to my @Before function. With this in place Espresso becomes smarter and waits fo
 
 Base version
 Added second changed line to this file
+Added third line
